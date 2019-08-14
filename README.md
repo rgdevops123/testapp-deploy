@@ -1,4 +1,4 @@
-# testapp-deploy
+# testapp-jenkins-deploy
 
 ```
 Jenkins:  http://your_ip_or_domain:8080
@@ -9,21 +9,18 @@ Continuous integration (CI) is a DevOps practice in which team members regularly
 
    Build, Test & Deploy phases.
 
+   1: Provision an instance with Terraform.
+
+$ git clone https://github.com/rgdevops123/terraform-aws-ec2-instance-ubuntu
+$ cd terraform-aws-ec2-instance
+   Follow README.md instructions.
+
 
 Disable Firewall on Ubuntu 18.04
 $ sudo ufw status
 $ sudo ufw disable
 $ sudo systemctl disable ufw
 $ sudo systemctl stop ufw
-
-
-
-
-   1: Provision an instance with Terraform.
-
-$ git clone https://github.com/rgdevops123/terraform-aws-ec2-instance-ubuntu
-$ cd terraform-aws-ec2-instance
-   Follow README.md instructions.
 
 
     Install Docker:
@@ -35,6 +32,7 @@ $ sudo systemctl enable docker
    Create a custom Jenkins Docker Image:
 $ mkdir jenkins-devops
 $ cd jenkins-devops
+
 $ vim Dockerfile
 +++
 # Starting off with the Jenkins base Image.
@@ -79,7 +77,8 @@ jenkins.save()
 
 $ sudo docker build -t jenkins-devops .
 
-         :OLD: $ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 jenkins-devops
+$ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker --privileged=true jenkins-devops
+
 
    :REFERENCE:
 $ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 
@@ -88,9 +87,8 @@ $ sudo docker run -d --rm --name jenkins-devops -p 8080:8080
    :REFERENCE:
 
 
-$ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker --privileged=true jenkins-devops
 
-         GITHUB: https://github.com/rgdevops123/testapp
+         GITHUB: https://github.com/rgdevops123/testapp-jenkins-deploy
 
 $ sudo docker ps -a
 
@@ -107,11 +105,8 @@ Password: admin
          Part 1: The Web Application with Docker.
 
    Create a Test Flask Application:
-      $ git clone https://github.com/rgdevops123/testapp-deploy
-
-
-$ sudo yum -y install python36
-$ sudo yum -y install python36-pip
+      $ cd ~
+      $ git clone https://github.com/rgdevops123/testapp-jenkins-deploy
 
 $ vim requirements.txt
 +++
@@ -119,7 +114,7 @@ flask
 xmlrunner
 +++
 
-
+$ sudo apt -y install python3-pip
 $ sudo pip3 install -r requirements.txt
 
 
@@ -146,7 +141,6 @@ def hello_user(username):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')      # Open for everyone.
-
 +++
 
 
@@ -163,56 +157,8 @@ $ curl -i localhost:5000/hello/John
 
 
 
-   Create a Dockerfile, Docker Image and Container:
 
-$ sudo yum -y install docker
-$ sudo apt install docker.io
-$ sudo systemctl start docker
-
-$ vim Dockerfile
-+++
-# Use a Python 3.6 Base Image.
-FROM python:3.6
-
-# Set Maintainer.
-LABEL maintainer "rgdevops123@gmail.com"
-
-# Copy Application files.
-COPY app.py requirements.txt test.py /
-
-# Install Dependencies.
-RUN pip install -r requirements.txt
-
-# Set a Health Check.
-HEALTHCHECK --interval=5s \
-            --timeout=5s \
-            CMD curl -f http://127.0.0.1:5000 || exit 1
-
-# tell docker what port to expose
-EXPOSE 5000
-
-# Specify the command to run.
-ENTRYPOINT ["python","app.py"]
-+++
-
-
-   Build the Image.
-$ sudo docker build . -t rgdevops123/testapp-deploy
-
-   Confirm:
-$ sudo docker images
-
-
-   Create a Container from the image.
-$ sudo docker run -d --rm --name testapp-deploy -p 5000:5000 rgdevops123/testapp-deploy
-
-   Confirm:
-$ sudo docker ps
-http://127.0.0.1:5000/
-
-
-
-         Part 2: The Unit Tests
+         The Unit Tests
 
    Write some tests to test these routes.
 
@@ -267,6 +213,57 @@ $ cat test-reports/TEST-TestHello-<TIME_AND_DATE_OF_TEST>.xml
 
 
 
+   Create a Dockerfile, Docker Image and Container:
+
+$ sudo apt -y install docker.io
+$ sudo systemctl start docker
+$ sudo systemctl enable docker
+
+
+$ vim Dockerfile
++++
+# Use a Python 3.6 Base Image.
+FROM python:3.6
+
+# Set Maintainer.
+LABEL maintainer "rgdevops123@gmail.com"
+
+# Copy Application files.
+COPY app.py requirements.txt test.py /
+
+# Install Dependencies.
+RUN pip install -r requirements.txt
+
+# Set a Health Check.
+HEALTHCHECK --interval=5s \
+            --timeout=5s \
+            CMD curl -f http://127.0.0.1:5000 || exit 1
+
+# tell docker what port to expose
+EXPOSE 5000
+
+# Specify the command to run.
+ENTRYPOINT ["python","app.py"]
++++
+
+
+   Build the Image.
+$ sudo docker build . -t rgdevops123/testapp-jenkins-deploy
+
+   Confirm:
+$ sudo docker images
+
+
+   Create a Container from the image.
+$ sudo docker run -d --rm --name testapp-jenkins-deploy -p 5000:5000 rgdevops123/testapp-jenkins-deploy
+
+   Confirm:
+$ sudo docker ps
+http://127.0.0.1:5000/
+
+
+
+
          Part 3: The Jenkins Pipeline
 
  Create a Jenkins CI Pipeline by creating a Jenkinsfile. 
@@ -292,12 +289,11 @@ node {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
 
-        app = docker.build("rgdevops123/testapp-deploy")
+        app = docker.build("rgdevops123/testapp-jenkins-deploy")
     }
 
     stage('Test image') {
-        /* Ideally, we would run a test framework against our image.
-         * For this example, we're using a Volkswagen-type approach ;-) */
+        /* Run a test framework against our image. */
 
         app.inside {
             sh 'python test.py'
@@ -316,6 +312,9 @@ node {
 }
 +++
 
+$ git commit -am "Added Jenkinsfile."
+$ git push
+
 
       In Jenkins Console:
 
@@ -328,12 +327,9 @@ node {
    *Select: GitHub Integration
    *Select: Restart Jenkins after restart.
 
-Enable Git under ‘Source Code Management’
-
-
 
    GITHUB:
-https://github.com/rgdevops123/testapp-deploy/settings/hooks/new   (WEBHOOKS)
+https://github.com/rgdevops123/testapp-jenkins-deploy/settings/hooks/new   (WEBHOOKS)
 http://18.219.19.223:8080/github-webhook/
 JSON
 Just Push
@@ -344,7 +340,7 @@ Now let’s see how to use this webhook in Jenkins.
 
     Go to Manage Jenkins -> Configure System
     Scroll down and you will find the GitHub Pull Requests checkbox. In the Published Jenkins URL, add the repository link
-   https://github.com/rgdevops123/testapp-deploy
+   https://github.com/rgdevops123/testapp-jenkins-deploy
     Click on "Save."
 
 
@@ -360,6 +356,6 @@ and then configured to fetch the Jenkinsfile from that repository.
 Build Triggers: GitHub hook trigger for GITScm polling
 Select: Pipeline Script from SCM
 SCM: GIT
-Repository URL: https://github.com/rgdevops123/testapp-deploy
+Repository URL: https://github.com/rgdevops123/testapp-jenkins-deploy
 
 ```
