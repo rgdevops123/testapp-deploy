@@ -11,12 +11,11 @@ node {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
 
-        app = docker.build("rgdevops123/testapp-deploy")
+        app = docker.build("rgdevops123/testapp-jenkins-deploy")
     }
 
     stage('Test image') {
-        /* Ideally, we would run a test framework against our image.
-         * For this example, we're using a Volkswagen-type approach ;-) */
+        /* Run a test framework against our image. */
 
         app.inside {
             sh 'python test.py'
