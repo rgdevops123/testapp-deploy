@@ -354,6 +354,7 @@ and then configured to fetch the Jenkinsfile from that repository.
 
       New Item:
    Options...
+General: GitHub Project: https://github.com/rgdevops123/testapp-jenkins-deploy
 Build Triggers: GitHub hook trigger for GITScm polling
 Select: Pipeline Script from SCM
 SCM: GIT
