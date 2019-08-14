@@ -336,10 +336,11 @@ Just Push
 
 
    JENKINS:
-Now let’s see how to use this webhook in Jenkins.
+Use this webhook in Jenkins.
 
     Go to Manage Jenkins -> Configure System
-    Scroll down and you will find the GitHub Pull Requests checkbox. In the Published Jenkins URL, add the repository link
+    Scroll down and you will find the GitHub Pull Requests checkbox. 
+      In the Published Jenkins URL, add the repository link
    https://github.com/rgdevops123/testapp-jenkins-deploy
     Click on "Save."
 
@@ -358,4 +359,7 @@ Select: Pipeline Script from SCM
 SCM: GIT
 Repository URL: https://github.com/rgdevops123/testapp-jenkins-deploy
 
+
+
+   Test by updating git repo and watch the CI/CD.
 ```
