@@ -312,6 +312,7 @@ node {
 }
 +++
 
+
 $ git commit -am "Added Jenkinsfile."
 $ git push
 
@@ -326,6 +327,21 @@ $ git push
    *Manage Plugins
    *Select: GitHub Integration
    *Select: Restart Jenkins after restart.
+
+
+Add Credentials:
+
+Click Credentials.
+Click System.
+Click Global credentials (unrestricted).
+Click Add Credentials.
+   Kind: Username with Password.
+   Scope: Global
+   Username: rgdevops123
+   Password: <PASSWORD>
+   ID: docker-hub-credentials
+   Description: Docker Hub Credentials
+Click Ok.
 
 
    GITHUB:
