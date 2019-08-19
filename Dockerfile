@@ -15,7 +15,7 @@ HEALTHCHECK --interval=5s \
             --timeout=5s \
             CMD curl -f http://127.0.0.1:5000 || exit 1
 
-# Tell docker what port to expose
+# Tell Docker what port to expose.
 EXPOSE 5000
 
 # Specify the command to run.
