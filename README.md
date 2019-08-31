@@ -19,6 +19,7 @@ $ cd terraform-aws-ec2-instance
 Disable Firewall on Ubuntu 18.04
 $ sudo ufw status
 $ sudo ufw disable
+$ sudo systemctl status ufw
 $ sudo systemctl disable ufw
 $ sudo systemctl stop ufw
 
@@ -77,15 +78,11 @@ jenkins.save()
 
 $ sudo docker build -t jenkins-devops .
 
-$ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker --privileged=true jenkins-devops
-
-
-   :REFERENCE:
-$ sudo docker run -d --rm --name jenkins-devops -p 8080:8080 
--p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock
--v $(which docker):/usr/bin/docker --privileged=true jenkins-devops
-   :REFERENCE:
-
+$ sudo docker run -d --rm --name jenkins-devops \
+-p 8080:8080 -p 50000:50000 \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(which docker):/usr/bin/docker \
+--privileged=true jenkins-devops
 
 
          GITHUB: https://github.com/rgdevops123/testapp-jenkins-deploy
@@ -96,7 +93,7 @@ $ sudo docker ps -a
 Stream the Container's logs:
 $ sudo docker logs --follow jenkins-devops
 
-http://jenkins-server:8080
+   GOTO: http://jenkins-server:8080
 Username: admin
 Password: admin
 
@@ -313,6 +310,7 @@ node {
 +++
 
 
+$ git add Jenkinsfile
 $ git commit -am "Added Jenkinsfile."
 $ git push
 
@@ -325,11 +323,13 @@ $ git push
 
    *Manage Jenkins
    *Manage Plugins
+   *Click: Available Tab
    *Select: GitHub Integration
+   *Click: Install without restart.
    *Select: Restart Jenkins after restart.
 
 
-Add Credentials:
+Adding Credentials:
 
 Click Credentials.
 Click System.
@@ -344,11 +344,14 @@ Click Add Credentials.
 Click Ok.
 
 
-   GITHUB:
+   GITHUB: Add a Webhook.
 https://github.com/rgdevops123/testapp-jenkins-deploy/settings/hooks/new   (WEBHOOKS)
-http://18.219.19.223:8080/github-webhook/
-JSON
-Just Push
+  Payload URL:
+http://<IP_OF_JENKINS_SERVER>:8080/github-webhook/
+  Content Type:
+application/json
+  Which events would you like to trigger this webhook?
+Just the "push" event. 
 
 
    JENKINS:
@@ -369,14 +372,19 @@ This code will have to be checked into a Git repository (or other Source Code Ma
 and then configured to fetch the Jenkinsfile from that repository.
 
       New Item:
+Enter Name: testapp-jenkins-deploy
+Click: Pipeline
    Options...
 General: GitHub Project: https://github.com/rgdevops123/testapp-jenkins-deploy
 Build Triggers: GitHub hook trigger for GITScm polling
-Select: Pipeline Script from SCM
-SCM: GIT
-Repository URL: https://github.com/rgdevops123/testapp-jenkins-deploy
+Pipeline:
+   Select: Pipeline Script from SCM
+   SCM: GIT
+   Repository URL: https://github.com/rgdevops123/testapp-jenkins-deploy
 
 
+   NOTE1: You have to have at least one build before the webhook will work.
+   NOTE2: You have to have at least 3GB of memory for Selenium Web Tests.
 
    Test by updating git repo and watch the CI/CD.
 ```
